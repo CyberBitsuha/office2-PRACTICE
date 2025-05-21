@@ -18,13 +18,10 @@ public class HibernateConfig {
     @Bean
     public DataSource dataSource() {
         BasicDataSource ds = new BasicDataSource();
-        // PostgreSQL JDBC Driver
         ds.setDriverClassName("org.postgresql.Driver");
-        // Адрес вашей БД. Замените <host>,<port>,<dbname> на реальные:
         ds.setUrl("jdbc:postgresql://localhost:5432/CR_2");
         ds.setUsername("postgres");
         ds.setPassword("admin");
-        // (опционально) пул настроек:
         ds.setInitialSize(5);
         ds.setMaxTotal(10);
         return ds;
@@ -36,7 +33,6 @@ public class HibernateConfig {
         sfb.setDataSource(dataSource());
         sfb.setPackagesToScan("com.office2.model");
         Properties hprops = new Properties();
-        // PostgreSQL Dialect
         hprops.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
         hprops.put("hibernate.hbm2ddl.auto", "update");  // или validate
         hprops.put("hibernate.show_sql", "true");

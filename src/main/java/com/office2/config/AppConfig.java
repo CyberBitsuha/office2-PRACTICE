@@ -10,5 +10,5 @@ import org.springframework.context.annotation.Configuration;
         "com.office2.dao"
 })
 public class AppConfig {
-    // дополнительные бины, если будут нужны
+
 }

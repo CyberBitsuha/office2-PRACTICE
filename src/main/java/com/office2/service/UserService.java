@@ -21,7 +21,6 @@ public class UserService {
         return null;
     }
 
-    /** Позволяет фильтру восстановить User по username */
     @Transactional(readOnly = true)
     public User findByUsername(String username) {
         return userDao.findByUsername(username);

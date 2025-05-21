@@ -8,12 +8,6 @@ import javax.servlet.*;
 import javax.servlet.http.*;
 import java.io.IOException;
 
-/**
- * Фильтр защиты /appeals/*:
- * – пускает, если в сессии есть loggedUser
- * – иначе пытается восстановить user через cookie rememberMe
- * – иначе редиректит на /login
- */
 public class AuthenticationFilter implements Filter {
 
     private UserService userService;

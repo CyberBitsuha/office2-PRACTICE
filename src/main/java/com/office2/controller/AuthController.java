@@ -19,19 +19,11 @@ public class AuthController {
     @Autowired
     private UserService userService;
 
-    /**
-     * Показать форму логина.
-     */
     @GetMapping("/login")
     public String loginForm() {
-        return "login";  // отобразит /WEB-INF/views/login.jsp
+        return "login";
     }
 
-    /**
-     * Обработать отправку логина/пароля.
-     * Если успешная аутентификация — сохранить пользователя в сессию и выставить cookie rememberMe.
-     * Иначе — вернуть обратно на форму с ошибкой.
-     */
     @PostMapping("/login")
     public String login(
             @RequestParam("login") String login,
@@ -58,9 +50,6 @@ public class AuthController {
         return "redirect:/appeals";
     }
 
-    /**
-     * Разлогинить пользователя: инвалидировать сессию и удалить cookie.
-     */
     @GetMapping("/logout")
     public String logout(HttpSession session, HttpServletResponse response) {
         // Уничтожаем сессию

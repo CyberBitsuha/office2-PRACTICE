@@ -32,10 +32,6 @@ public class AppealService {
             "Плетнева И.А.", "admin3"
     );
 
-    /**
-     * Разбирает строку и сохраняет новый Appeal.
-     * Менеджер в БД хранится как его логин (admin1/2/3).
-     */
     @Transactional
     public void parseAndSave(String line) {
         Matcher m = PARSE_PATTERN.matcher(line.trim());
