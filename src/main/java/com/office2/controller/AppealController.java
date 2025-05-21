@@ -1,0 +1,110 @@
+package com.office2.controller;
+
+import com.office2.model.Appeal;
+import com.office2.model.User;
+import com.office2.service.AppealService;
+import com.office2.util.QrCodeUtil;
+import com.google.zxing.WriterException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpSession;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
+@Controller
+@RequestMapping("/appeals")
+public class AppealController {
+
+    @Autowired
+    private AppealService appealService;
+
+    // Инвертированная мапа логин -> ФИО
+    private static final Map<String,String> LOGIN_TO_DISPLAY = Map.of(
+            "admin1", "Власюк Э.Д.",
+            "admin2", "Козлов Р.С.",
+            "admin3", "Плетнева И.А."
+    );
+
+    @GetMapping
+    public String list(Model model, HttpSession session) {
+        User u = (User) session.getAttribute("loggedUser");
+        if (u == null) return "redirect:/login";
+        List<Appeal> list = appealService.getByManager(u.getUsername());
+        model.addAttribute("appeals", list);
+        return "appeal-list";
+    }
+
+    @GetMapping("/new")
+    public String newForm(HttpSession session) {
+        if (session.getAttribute("loggedUser") == null) {
+            return "redirect:/login";
+        }
+        return "new-appeal";
+    }
+
+    @PostMapping("/save")
+    public String save(@RequestParam("inputLine") String line, HttpSession session) {
+        if (session.getAttribute("loggedUser") == null) {
+            return "redirect:/login";
+        }
+        appealService.parseAndSave(line);
+        return "redirect:/appeals";
+    }
+
+    @GetMapping("/edit/{id}")
+    public String edit(@PathVariable Long id, Model model, HttpSession session) {
+        User u = (User) session.getAttribute("loggedUser");
+        if (u == null) return "redirect:/login";
+        Appeal a = appealService.get(id);
+        if (!u.getUsername().equals(a.getManagername())) return "redirect:/appeals";
+        model.addAttribute("appeal", a);
+        return "edit-appeal";
+    }
+
+    @PostMapping("/update")
+    public String update(
+            @RequestParam Long id,
+            @RequestParam String resolution,
+            @RequestParam(required = false) String note,
+            Model model,
+            HttpSession session
+    ) throws WriterException, IOException {
+        User u = (User) session.getAttribute("loggedUser");
+        if (u == null) return "redirect:/login";
+
+        Appeal a = appealService.get(id);
+        if (!u.getUsername().equals(a.getManagername())) return "redirect:/appeals";
+
+        // обновляем решение и заметку
+        appealService.updateResolutionAndNote(id, resolution, note);
+        a = appealService.get(id);
+
+        // подставляем ФИО менеджера
+        String displayMgr = LOGIN_TO_DISPLAY.getOrDefault(a.getManagername(), a.getManagername());
+
+        // собираем текст для QR, включая ID
+        StringBuilder sb = new StringBuilder();
+        sb.append("ID: ").append(a.getId()).append("\n")
+                .append("Заявитель: ").append(a.getApplicantname()).append("\n")
+                .append("Менеджер: ").append(displayMgr).append("\n")
+                .append("Адрес: ").append(a.getAddress()).append("\n")
+                .append("Тема: ").append(a.getTheme()).append("\n")
+                .append("Содержание: ").append(a.getContent()).append("\n")
+                .append("Резолюция: ").append(a.getResolution()).append("\n")
+                .append("Заметка: ").append(a.getNote() == null ? "" : a.getNote());
+
+        String qrText = sb.toString();
+        String qr = QrCodeUtil.toBase64(qrText, 200, 200);
+
+        model.addAttribute("appeal", a);
+        model.addAttribute("qrData", qr);
+        model.addAttribute("appealResolutionText", qrText);
+
+        return "qr-result";
+    }
+
+}
