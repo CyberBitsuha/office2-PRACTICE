@@ -1,0 +1,13 @@
+com\office2\service\UserService.class
+com\office2\controller\AuthController.class
+com\office2\filter\AuthenticationFilter.class
+com\office2\dao\AppealDao.class
+com\office2\config\WebMvcConfig.class
+com\office2\config\HibernateConfig.class
+com\office2\model\User.class
+com\office2\util\QrCodeUtil.class
+com\office2\config\AppConfig.class
+com\office2\model\Appeal.class
+com\office2\controller\AppealController.class
+com\office2\dao\UserDao.class
+com\office2\service\AppealService.class

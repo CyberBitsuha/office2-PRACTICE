@@ -6,7 +6,7 @@
            http://java.sun.com/xml/ns/javaee
            http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd">
 
-    <!-- Корневой контекст Spring (JavaConfig) -->
+    <!-- Корневой контекст Spring (AppConfig + HibernateConfig) -->
     <context-param>
         <param-name>contextClass</param-name>
         <param-value>
@@ -24,7 +24,7 @@
         <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
     </listener>
 
-    <!-- Делегируем наш AuthenticationFilter -->
+    <!-- Фильтр аутентификации -->
     <filter>
         <filter-name>authFilter</filter-name>
         <filter-class>com.office2.filter.AuthenticationFilter</filter-class>
@@ -34,10 +34,11 @@
         <url-pattern>/appeals/*</url-pattern>
     </filter-mapping>
 
-    <!-- DispatcherServlet -->
+    <!-- DispatcherServlet Spring MVC -->
     <servlet>
         <servlet-name>dispatcher</servlet-name>
         <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+        <!-- использовать Java-конфигурацию вместо XML -->
         <init-param>
             <param-name>contextClass</param-name>
             <param-value>
@@ -46,23 +47,30 @@
         </init-param>
         <init-param>
             <param-name>contextConfigLocation</param-name>
-            <param-value>
-                com.office2.config.WebMvcConfig
-            </param-value>
+            <param-value>com.office2.config.WebMvcConfig</param-value>
         </init-param>
         <load-on-startup>1</load-on-startup>
+
+        <!-- Multipart-конфигурация для обработки загрузки файлов -->
+        <multipart-config>
+            <!-- размер одного файла, байты -->
+            <max-file-size>5242880</max-file-size>       <!-- 5 MB -->
+            <!-- общий размер всех файлов в запросе -->
+            <max-request-size>20971520</max-request-size> <!-- 20 MB -->
+            <!-- порог в байтах, после которого контент сохраняется во временный файл -->
+            <file-size-threshold>0</file-size-threshold>
+        </multipart-config>
     </servlet>
+
     <servlet-mapping>
         <servlet-name>dispatcher</servlet-name>
         <url-pattern>/</url-pattern>
     </servlet-mapping>
 
-    <!-- UTF-8 фильтр -->
+    <!-- Фильтр кодировки UTF-8 -->
     <filter>
         <filter-name>encodingFilter</filter-name>
-        <filter-class>
-            org.springframework.web.filter.CharacterEncodingFilter
-        </filter-class>
+        <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
         <init-param>
             <param-name>encoding</param-name>
             <param-value>UTF-8</param-value>
@@ -81,4 +89,5 @@
     <welcome-file-list>
         <welcome-file>login.jsp</welcome-file>
     </welcome-file-list>
+
 </web-app>

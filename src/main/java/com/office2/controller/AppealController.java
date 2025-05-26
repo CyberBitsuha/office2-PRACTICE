@@ -1,14 +1,15 @@
 package com.office2.controller;
 
+import com.google.zxing.NotFoundException;
 import com.office2.model.Appeal;
 import com.office2.model.User;
 import com.office2.service.AppealService;
 import com.office2.util.QrCodeUtil;
-import com.google.zxing.WriterException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
@@ -22,7 +23,6 @@ public class AppealController {
     @Autowired
     private AppealService appealService;
 
-    // Инвертированная мапа логин -> ФИО
     private static final Map<String,String> LOGIN_TO_DISPLAY = Map.of(
             "admin1", "Власюк Э.Д.",
             "admin2", "Козлов Р.С.",
@@ -47,14 +47,45 @@ public class AppealController {
     }
 
     @PostMapping("/save")
-    public String save(@RequestParam("inputLine") String line, HttpSession session) {
-        if (session.getAttribute("loggedUser") == null) {
+    public String save(
+            @RequestParam("qrFile") MultipartFile qrFile,
+            HttpSession session,
+            Model model
+    ) throws IOException {
+        // Проверяем, что пользователь залогинен
+        User u = (User) session.getAttribute("loggedUser");
+        if (u == null) {
             return "redirect:/login";
         }
-        appealService.parseAndSave(line);
+
+        // Проверяем наличие файла
+        if (qrFile == null || qrFile.isEmpty()) {
+            model.addAttribute("error", "Файл не выбран или пустой");
+            return "new-appeal";
+        }
+
+        String decodedText;
+        try {
+            // Попытка декодировать текст из QR
+            decodedText = QrCodeUtil.decodeQr(qrFile.getInputStream());
+        } catch (NotFoundException nf) {
+            model.addAttribute("error", "QR-код не распознан: неверный формат");
+            return "new-appeal";
+        } catch (Exception e) {
+            model.addAttribute("error", "Ошибка при чтении QR-кода: " + e.getMessage());
+            return "new-appeal";
+        }
+
+        // Разбираем и сохраняем
+        try {
+            appealService.parseAndSave(decodedText);
+        } catch (IllegalArgumentException iae) {
+            model.addAttribute("error", iae.getMessage());
+            return "new-appeal";
+        }
+
         return "redirect:/appeals";
     }
-
     @GetMapping("/edit/{id}")
     public String edit(@PathVariable Long id, Model model, HttpSession session) {
         User u = (User) session.getAttribute("loggedUser");
@@ -72,21 +103,18 @@ public class AppealController {
             @RequestParam(required = false) String note,
             Model model,
             HttpSession session
-    ) throws WriterException, IOException {
+    ) throws com.google.zxing.WriterException, IOException {
         User u = (User) session.getAttribute("loggedUser");
         if (u == null) return "redirect:/login";
 
         Appeal a = appealService.get(id);
         if (!u.getUsername().equals(a.getManagername())) return "redirect:/appeals";
 
-        // обновляем решение и заметку
         appealService.updateResolutionAndNote(id, resolution, note);
         a = appealService.get(id);
 
-        // подставляем ФИО менеджера
         String displayMgr = LOGIN_TO_DISPLAY.getOrDefault(a.getManagername(), a.getManagername());
 
-        // собираем текст для QR, включая ID
         StringBuilder sb = new StringBuilder();
         sb.append("ID: ").append(a.getId()).append("\n")
                 .append("Заявитель: ").append(a.getApplicantname()).append("\n")
@@ -106,5 +134,4 @@ public class AppealController {
 
         return "qr-result";
     }
-
 }
